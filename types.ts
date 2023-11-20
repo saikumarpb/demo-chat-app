@@ -12,3 +12,8 @@ export const MessageSchema = z
         }
         return true; // For other types like SUBSCRIBE and UNSUBSCRIBE
     });
+
+export const WsUserSchema = z.object({
+    userId: z.string(),
+    rooms: z.array(z.string()),
+});

@@ -1,15 +1,18 @@
 import { ServerWebSocket } from "bun";
 import { nanoid } from "nanoid";
-import { MessageSchema } from "./types";
+import { MessageSchema, WsUserSchema } from "./types";
 import { handleWsMessage } from "./message";
-import { ZodError } from "zod";
+import { ZodError, z } from "zod";
 
 export function onOpenHandler  (ws: ServerWebSocket<unknown>) {
     ws.send('Connection opened');
     const userId = nanoid();
-    ws.data = userId;
+    ws.data  = {
+        userId: userId,
+        rooms: []
+    } as  z.infer<typeof WsUserSchema>
+    
     ws.send(`Your userId : ${userId}`);
-    ``;
 }
 
 
