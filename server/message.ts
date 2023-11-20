@@ -21,14 +21,24 @@ export function handleWsMessage(
                 ROOMS.set(roomId, [wsData.userId]);
             } else {
                 const existingUsers = ROOMS.get(roomId);
-                ROOMS.set(roomId, [...existingUsers!, wsData.userId]);
+                if (!existingUsers?.includes(wsData.userId)) {
+                    ROOMS.set(roomId, [...existingUsers!, wsData.userId]);
+                    ws.publish(
+                        roomId,
+                        `User: ${wsData.userId} entered the room`
+                    );
+                }
             }
-            ws.publish(roomId, `User: ${wsData.userId} entered the room`);
-            ws.publish(roomId, `Users list : ${ROOMS.get(roomId)!.join(', ')}`);
+            ws.publish(roomId, `active-users:${ROOMS.get(roomId)!.join(', ')}`);
+            ws.send(`active-users:${ROOMS.get(roomId)!.join(', ')}`);
+
+            break;
         }
 
         case 'PUBLISH': {
-            ws.publish(message.topic, message.data!);
+            ws.publish(message.topic, `${wsData.userId}: ${message.data!}`);
+            ws.send(`${wsData.userId}: ${message.data!}`);
+            break;
         }
 
         case 'UNSUBSCRIBE': {
@@ -38,10 +48,15 @@ export function handleWsMessage(
                 (id) => id !== wsData.userId
             );
             ROOMS.set(roomId, updatedUsers!);
+            ws.publish(roomId, `User: ${wsData.userId} left the room`);
+            ws.publish(
+                roomId,
+                `active-users : ${ROOMS.get(roomId)!.join(', ')}`
+            );
             ws.unsubscribe(roomId);
             ws.close();
-            ws.publish(roomId, `User: ${wsData.userId} left the room`);
-            ws.publish(roomId, `Users list : ${ROOMS.get(roomId)!.join(', ')}`);
+
+            break;
         }
     }
 }
